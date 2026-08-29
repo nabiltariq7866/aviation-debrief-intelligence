@@ -1,0 +1,2 @@
+/** @type {import('tailwindcss').Config} */
+export default {content:['./index.html','./src/**/*.{js,ts,jsx,tsx}'],theme:{extend:{colors:{ink:'var(--text-primary)',muted:'var(--text-secondary)',faint:'var(--text-muted)',surface:'var(--bg-surface)',panel:'var(--bg-secondary)',elevated:'var(--bg-elevated)',line:'var(--border-primary)',accent:'var(--accent)',success:'var(--success)',purple:'var(--purple)',danger:'var(--danger)'}}},plugins:[]}
