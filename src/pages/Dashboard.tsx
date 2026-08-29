@@ -1,9 +1,149 @@
-import type { ReactNode } from 'react'
-import { BookOpen, BrainCircuit, CheckCircle2, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  BrainCircuit,
+  CheckCircle2,
+  Clock3,
+  GraduationCap,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  UsersRound,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Badge, PageHeader, SectionCard } from '../components/ui'
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Badge, MetricCard, PageHeader, Progress, SectionCard } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
-const chart=[{m:'Mar',d:16,l:5},{m:'Apr',d:19,l:6},{m:'May',d:21,l:7},{m:'Jun',d:25,l:8},{m:'Jul',d:31,l:10},{m:'Aug',d:38,l:12}]
-function M({label,value,caption,icon}:{label:string;value:string;caption:string;icon:ReactNode}){return <div className="card p-4"><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] font-semibold uppercase tracking-[.12em] text-faint">{label}</div><div className="mt-2 text-2xl font-semibold tracking-tight text-ink">{value}</div><div className="mt-1 text-[10px] text-muted">{caption}</div></div><div className="grid h-9 w-9 place-items-center rounded-xl bg-accent/10 text-accent">{icon}</div></div></div>}
-export default function Dashboard(){const {debriefs,lessons,trends,profiles,activity}=useDemo();const pending=lessons.filter(l=>l.status==='Draft').length;const pub=lessons.filter(l=>l.status==='Published').length;return <><PageHeader eyebrow="Operational Learning" title="Learning intelligence command center" description="Convert crew, training and assessment debriefs into structured lessons, recurring patterns and searchable organizational knowledge — without replacing safety-critical human judgement." actions={<Link to="/debriefs/new" className="primary-btn"><Sparkles size={15}/>Run core demo flow</Link>}/><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><M label="Debriefs captured" value={String(debriefs.length)} caption="Mission, training & assessment" icon={<BookOpen size={16}/>}/><M label="Published lessons" value={String(pub)} caption="Searchable organization-wide" icon={<BrainCircuit size={16}/>}/><M label="Recurring trends" value={String(trends.length)} caption="AI-supported pattern detection" icon={<TrendingUp size={16}/>}/><M label="Human review" value={String(pending)} caption="AI candidates awaiting validation" icon={<ShieldCheck size={16}/>}/></div><div className="mt-4 grid gap-4 xl:grid-cols-[1.3fr_.7fr]"><SectionCard title="Learning activity" description="Debrief volume and lessons surfaced over time"><div className="h-[250px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={chart}><CartesianGrid vertical={false} stroke="var(--border-primary)" strokeOpacity={.45}/><XAxis dataKey="m" axisLine={false} tickLine={false} tick={{fontSize:10,fill:'var(--text-muted)'}}/><YAxis axisLine={false} tickLine={false} tick={{fontSize:10,fill:'var(--text-muted)'}}/><Tooltip contentStyle={{background:'var(--bg-elevated)',border:'1px solid var(--border-primary)',borderRadius:12,color:'var(--text-primary)'}}/><Bar dataKey="d" fill="var(--success)" radius={[4,4,0,0]} maxBarSize={24}/><Bar dataKey="l" fill="var(--accent)" radius={[4,4,0,0]} maxBarSize={16}/></BarChart></ResponsiveContainer></div></SectionCard><SectionCard title="Safety boundary" description="Human-in-the-loop is part of the product"><div className="rounded-2xl border border-success/20 bg-success/5 p-4"><div className="flex items-center gap-2 text-sm font-semibold text-ink"><CheckCircle2 size={16} className="text-success"/>AI may organize, summarize and surface patterns</div><div className="mt-3 space-y-2 text-xs leading-5 text-muted"><div>• No flight-safety or crew-fitness decisions.</div><div>• Trainer/checker validates lesson candidates.</div><div>• Trends retain supporting evidence.</div></div></div><div className="mt-3 grid grid-cols-2 gap-3"><div className="rounded-xl bg-panel/60 p-3"><div className="text-[10px] text-faint">Training profiles</div><div className="mt-1 text-lg font-semibold text-ink">{profiles.length}</div></div><div className="rounded-xl bg-panel/60 p-3"><div className="text-[10px] text-faint">Review queue</div><div className="mt-1 text-lg font-semibold text-accent">{pending}</div></div></div></SectionCard></div><div className="mt-4 grid gap-4 xl:grid-cols-2"><SectionCard title="Recurring pattern detected" description="The demo's primary client moment" action={<Link to="/trends" className="text-xs font-semibold text-accent">Explore trends</Link>}><div className="rounded-2xl border border-accent/20 bg-accent/5 p-4"><div className="flex items-start justify-between gap-3"><div><div className="text-sm font-semibold text-ink">Approach briefing completeness</div><div className="mt-1 text-xs text-muted">Weather changes are repeatedly linked to late briefing refreshes.</div></div><Badge tone="accent">12 observations</Badge></div><div className="mt-4 grid grid-cols-3 gap-3"><div><div className="text-[9px] text-faint">Crews</div><div className="mt-1 text-base font-semibold text-ink">5</div></div><div><div className="text-[9px] text-faint">Change</div><div className="mt-1 text-base font-semibold text-accent">+21%</div></div><div><div className="text-[9px] text-faint">Evidence</div><div className="mt-1 text-base font-semibold text-ink">4 debriefs</div></div></div></div></SectionCard><SectionCard title="Live learning activity" description="Latest structured knowledge events"><div className="space-y-2">{activity.slice(0,5).map(e=><div key={e.id} className="flex gap-3 rounded-xl border border-line/60 bg-panel/40 p-3"><div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${e.tone==='success'?'bg-success':e.tone==='danger'?'bg-danger':e.tone==='purple'?'bg-purple':'bg-accent'}`}/><div className="min-w-0 flex-1"><div className="text-xs font-semibold text-ink">{e.title}</div><div className="mt-1 text-[10px] leading-4 text-muted">{e.detail}</div></div><div className="shrink-0 text-[9px] text-faint">{e.time}</div></div>)}</div></SectionCard></div></>}
+
+const learningActivity=[
+  {month:'Mar',debriefs:16,lessons:5},
+  {month:'Apr',debriefs:19,lessons:6},
+  {month:'May',debriefs:21,lessons:7},
+  {month:'Jun',debriefs:25,lessons:8},
+  {month:'Jul',debriefs:31,lessons:10},
+  {month:'Aug',debriefs:38,lessons:12},
+]
+
+const knowledgeGrowth=[
+  {month:'Mar',published:6},
+  {month:'Apr',published:8},
+  {month:'May',published:11},
+  {month:'Jun',published:14},
+  {month:'Jul',published:17},
+  {month:'Aug',published:22},
+]
+
+const tooltipStyle={background:'var(--bg-elevated)',border:'1px solid var(--border-primary)',borderRadius:12,color:'var(--text-primary)',boxShadow:'var(--shadow-float)'}
+
+export default function Dashboard(){
+  const {debriefs,lessons,trends,profiles,activity}=useDemo()
+  const pending=lessons.filter(l=>l.status==='Draft').length
+  const published=lessons.filter(l=>l.status==='Published').length
+  const recentTrend=trends[0]
+
+  return <>
+    <PageHeader
+      eyebrow="Operational Learning"
+      title="Learning intelligence command center"
+      description="Turn crew, training and assessment debriefs into structured lessons, recurring patterns and searchable organizational knowledge while preserving human authority over safety-critical judgement."
+      actions={<Link to="/debriefs/new" className="primary-btn"><Sparkles size={15}/>Run core demo flow</Link>}
+    />
+
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <MetricCard label="Debriefs captured" value={String(debriefs.length)} caption="Post-mission, training & assessment" icon={<BookOpen size={16}/>} tone="info" change="Live"/>
+      <MetricCard label="Published lessons" value={String(published)} caption="Searchable organization-wide" icon={<BrainCircuit size={16}/>} tone="success" change="Validated"/>
+      <MetricCard label="Recurring trends" value={String(trends.length)} caption="Evidence-backed pattern signals" icon={<TrendingUp size={16}/>} tone="accent" change="+21%"/>
+      <MetricCard label="Human review" value={String(pending)} caption="AI candidates awaiting validation" icon={<ShieldCheck size={16}/>} tone="purple"/>
+    </div>
+
+    <div className="mt-4 grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
+      <SectionCard title="Learning activity" description="Debrief volume and organization-wide lessons surfaced over time" action={<Badge tone="success">Operational learning growing</Badge>}>
+        <div className="mb-4 flex flex-wrap gap-5 text-[10px] text-muted">
+          <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-success"/>Debriefs</span>
+          <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-accent"/>Lessons surfaced</span>
+        </div>
+        <div className="h-[285px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={learningActivity} barCategoryGap="34%">
+              <CartesianGrid vertical={false}/>
+              <XAxis dataKey="month" axisLine={false} tickLine={false}/>
+              <YAxis axisLine={false} tickLine={false}/>
+              <Tooltip contentStyle={tooltipStyle} cursor={{fill:'rgba(197,155,72,.055)'}}/>
+              <Bar dataKey="debriefs" fill="var(--success)" radius={[5,5,0,0]} maxBarSize={26}/>
+              <Bar dataKey="lessons" fill="var(--accent)" radius={[5,5,0,0]} maxBarSize={18}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Core learning workflow" description="The exact client story, connected end-to-end">
+        <div className="space-y-1">
+          {[
+            ['1','Crew debrief captured','Human-authored source preserved','success'],
+            ['2','AI organizes observations','Summary, categories & lesson candidate','purple'],
+            ['3','Historical similarity checked','Supporting records remain inspectable','accent'],
+            ['4','Trainer / checker validates','Human authority before publication','success'],
+            ['5','Knowledge becomes searchable','Available to the wider organization','accent'],
+          ].map(([step,title,desc,tone],index)=><div key={step} className="relative flex gap-3 pb-4 last:pb-0">
+            {index<4&&<span className="absolute left-[15px] top-8 h-[calc(100%-18px)] w-px bg-line"/>}
+            <div className={`relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-xl border text-[10px] font-bold ${tone==='success'?'border-success/25 bg-success/10 text-success':tone==='purple'?'border-purple/25 bg-purple/10 text-purple':'border-accent/25 bg-accent/10 text-accent'}`}>{step}</div>
+            <div className="pt-0.5"><div className="text-xs font-semibold text-ink">{title}</div><div className="mt-1 text-[10px] leading-4 text-muted">{desc}</div></div>
+          </div>)}
+        </div>
+        <Link to="/debriefs/new" className="secondary-btn mt-4 w-full">Start with a new debrief <ArrowRight size={14}/></Link>
+      </SectionCard>
+    </div>
+
+    <div className="mt-4 grid gap-4 xl:grid-cols-[.9fr_1.1fr]">
+      <SectionCard title="Recurring pattern signal" description="One crew's experience connected to wider evidence" action={<Link to="/trends" className="text-[11px] font-semibold text-accent">Open trend intelligence</Link>}>
+        {recentTrend&&<>
+          <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div><div className="text-sm font-semibold text-ink">{recentTrend.title}</div><div className="mt-1 max-w-xl text-[11px] leading-5 text-muted">{recentTrend.description}</div></div>
+              <Badge tone="accent"><TrendingUp size={11}/>{recentTrend.direction} {recentTrend.change}%</Badge>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className="panel-soft p-3"><div className="data-label">Occurrences</div><div className="mt-1 text-xl font-semibold text-ink">{recentTrend.occurrences}</div></div>
+              <div className="panel-soft p-3"><div className="data-label">Crews</div><div className="mt-1 text-xl font-semibold text-ink">{recentTrend.crews}</div></div>
+              <div className="panel-soft p-3"><div className="data-label">Evidence</div><div className="mt-1 text-xl font-semibold text-ink">{recentTrend.sourceDebriefIds.length}</div></div>
+            </div>
+          </div>
+          <div className="mt-4 h-[145px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={knowledgeGrowth}>
+                <defs><linearGradient id="knowledgeGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--accent)" stopOpacity=".26"/><stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/></linearGradient></defs>
+                <CartesianGrid vertical={false}/><XAxis dataKey="month" axisLine={false} tickLine={false}/><YAxis hide/>
+                <Tooltip contentStyle={tooltipStyle}/><Area dataKey="published" type="monotone" stroke="var(--accent)" strokeWidth={2} fill="url(#knowledgeGradient)"/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </>}
+      </SectionCard>
+
+      <SectionCard title="Live learning activity" description="Latest human, AI and publication events" action={<Link to="/audit" className="text-[11px] font-semibold text-accent">Full audit history</Link>}>
+        <div className="space-y-2">
+          {activity.slice(0,6).map(event=><div key={event.id} className="flex items-start gap-3 rounded-xl border border-line bg-panel/40 p-3.5">
+            <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${event.tone==='success'?'bg-success':event.tone==='danger'?'bg-danger':event.tone==='purple'?'bg-purple':'bg-accent'}`}/>
+            <div className="min-w-0 flex-1"><div className="text-xs font-semibold text-ink">{event.title}</div><div className="mt-1 text-[10px] leading-4 text-muted">{event.detail}</div></div>
+            <div className="inline-flex shrink-0 items-center gap-1 text-[9px] text-faint"><Clock3 size={10}/>{event.time}</div>
+          </div>)}
+        </div>
+      </SectionCard>
+    </div>
+
+    <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="card p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink"><GraduationCap size={16} className="text-purple"/>Training development</div>
+        <div className="mt-4 flex items-end justify-between"><div><div className="text-2xl font-semibold text-ink">{profiles.length}</div><div className="mt-1 text-[10px] text-muted">Individual profiles connected to source records</div></div><Link to="/training-profiles" className="text-[10px] font-semibold text-accent">Open profiles</Link></div>
+      </div>
+      <div className="card p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink"><UsersRound size={16} className="text-success"/>Knowledge distribution</div>
+        <div className="mt-4"><div className="mb-2 flex justify-between text-[10px]"><span className="text-muted">Published vs total lessons</span><span className="font-semibold text-ink">{published}/{lessons.length}</span></div><Progress value={lessons.length?published/lessons.length*100:0} tone="success"/></div>
+      </div>
+      <div className="card p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink"><CheckCircle2 size={16} className="text-success"/>Safety boundary</div>
+        <div className="mt-3 text-[10px] leading-5 text-muted">AI organizes, summarizes and detects similarity. Qualified crew, trainers and checkers retain safety-critical judgement and validation authority.</div>
+      </div>
+    </div>
+  </>
+}

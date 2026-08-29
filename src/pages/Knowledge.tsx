@@ -1,7 +1,7 @@
-import { BookOpen, ClipboardList, GraduationCap, Search, TrendingUp } from 'lucide-react'
+import { ArrowRight, BookOpen, ClipboardList, GraduationCap, Search, Sparkles, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Badge, PageHeader } from '../components/ui'
+import { Badge, EmptyState, PageHeader, SearchField } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
 
 type Filter='All'|'Lessons'|'Debriefs'|'Training'|'Assessments'|'Trends'
@@ -12,7 +12,7 @@ type SearchResult={
   meta:string
   text:string
   to:string
-  tone:'success'|'accent'|'purple'|'muted'
+  tone:'success'|'accent'|'purple'|'muted'|'info'
 }
 
 const iconFor=(type:SearchResult['type'])=>{
@@ -53,7 +53,7 @@ export default function Knowledge(){
         meta:`${d.type} · ${d.mission} · ${d.date}`,
         text:d.aiSummary||d.rawNotes,
         to:`/debriefs/${d.id}`,
-        tone:(d.type==='Assessment Flight'?'purple':d.type==='Training Sortie'?'accent':'muted') as SearchResult['tone'],
+        tone:(d.type==='Assessment Flight'?'purple':d.type==='Training Sortie'?'accent':'info') as SearchResult['tone'],
       }))
 
     const trendResults=trends
@@ -85,46 +85,63 @@ export default function Knowledge(){
     }
   },[lessons,debriefs,trends,q])
 
+  const total=Object.values(counts).reduce((sum,value)=>sum+value,0)
+
   return <>
     <PageHeader
       eyebrow="Operational Knowledge"
       title="Searchable operational & training knowledge"
-      description="Search across published lessons, raw debrief evidence, training observations, assessment records and recurring trends so learning does not remain trapped inside individual documents."
+      description="Search across published lessons, post-mission evidence, training observations, assessment records and recurring trends so useful learning never remains trapped inside a single crew's debrief."
     />
 
-    <div className="card p-4">
-      <div className="relative">
-        <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-faint"/>
-        <input value={q} onChange={e=>setQ(e.target.value)} className="field h-12 pl-11 text-sm" placeholder="Search weather, CRM, approach briefing, handover, assessment…"/>
+    <section className="card relative overflow-hidden p-5">
+      <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-accent/7 blur-3xl"/>
+      <div className="relative grid gap-5 xl:grid-cols-[1fr_340px] xl:items-center">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-accent"><Sparkles size={14}/>Organization-wide learning search</div>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-.03em] text-ink">Find what the organization has already learned.</h2>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-muted">Search themes such as weather awareness, CRM, approach briefing or task handover and inspect the original evidence behind every result.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="panel-soft p-3 text-center"><div className="text-xl font-semibold text-ink">{lessons.filter(l=>l.status==='Published').length}</div><div className="mt-1 text-[9px] text-faint">Published lessons</div></div>
+          <div className="panel-soft p-3 text-center"><div className="text-xl font-semibold text-ink">{debriefs.length}</div><div className="mt-1 text-[9px] text-faint">Source records</div></div>
+          <div className="panel-soft p-3 text-center"><div className="text-xl font-semibold text-ink">{trends.length}</div><div className="mt-1 text-[9px] text-faint">Trend signals</div></div>
+        </div>
       </div>
 
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+      <div className="relative mt-5">
+        <SearchField value={q} onChange={setQ} placeholder="Search weather, CRM, approach briefing, handover, assessment…"/>
+      </div>
+
+      <div className="relative mt-3 flex gap-2 overflow-x-auto pb-1">
         {(['All','Lessons','Debriefs','Training','Assessments','Trends'] as Filter[]).map(item=>{
           const active=filter===item
-          const count=item==='All'?Object.values(counts).reduce((sum,value)=>sum+value,0):counts[item]
-          return <button key={item} onClick={()=>setFilter(item)} className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-semibold transition ${active?'border-accent/30 bg-accent/10 text-accent':'border-line bg-panel/45 text-muted hover:text-ink'}`}>{item}<span className="rounded-md bg-surface/60 px-1.5 py-0.5 text-[8px] text-faint">{count}</span></button>
+          const count=item==='All'?total:counts[item]
+          return <button key={item} onClick={()=>setFilter(item)} className={`tab-btn ${active?'tab-btn-active':''}`}>{item}<span className="rounded-md bg-panel px-1.5 py-0.5 text-[8px] text-faint">{count}</span></button>
         })}
       </div>
+    </section>
 
-      <div className="mt-3 text-[10px] text-faint">{results.length} knowledge result{results.length===1?'':'s'} across the selected source types</div>
-    </div>
+    <div className="mt-4 flex items-center justify-between gap-3"><div className="text-[10px] text-faint">{results.length} result{results.length===1?'':'s'} across the selected source types</div>{q&&<div className="text-[10px] text-muted">Search term: <span className="font-semibold text-ink">“{q}”</span></div>}</div>
 
-    <div className="mt-4 grid gap-3 xl:grid-cols-2">
+    {results.length?<div className="mt-3 grid gap-3 xl:grid-cols-2">
       {results.map(result=>{
         const Icon=iconFor(result.type)
-        return <Link key={`${result.type}-${result.id}`} to={result.to} className="card group p-4 transition hover:-translate-y-0.5 hover:border-accent/30">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 gap-3">
-              <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${result.type==='Lessons'?'bg-success/10 text-success':result.type==='Trends'?'bg-accent/10 text-accent':result.type==='Assessments'?'bg-purple/10 text-purple':'bg-panel text-muted'}`}><Icon size={16}/></div>
-              <div className="min-w-0"><div className="truncate text-sm font-semibold text-ink group-hover:text-accent">{result.title}</div><div className="mt-1 text-[10px] text-faint">{result.id} · {result.meta}</div></div>
+        const iconClass=result.type==='Lessons'?'bg-success/10 text-success':result.type==='Trends'?'bg-accent/10 text-accent':result.type==='Assessments'?'bg-purple/10 text-purple':result.type==='Training'?'bg-accent/10 text-accent':'bg-info-soft text-info'
+        return <Link key={`${result.type}-${result.id}`} to={result.to} className="card card-hover group p-4">
+          <div className="flex items-start gap-3">
+            <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line ${iconClass}`}><Icon size={17}/></div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0"><div className="truncate text-sm font-semibold text-ink transition group-hover:text-accent">{result.title}</div><div className="mt-1 text-[9px] text-faint">{result.id} · {result.meta}</div></div>
+                <Badge tone={result.tone}>{result.type}</Badge>
+              </div>
+              <p className="mt-3 line-clamp-3 text-[11px] leading-5 text-muted">{result.text}</p>
+              <div className="mt-3 flex justify-end"><span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent">Open knowledge source <ArrowRight size={12}/></span></div>
             </div>
-            <Badge tone={result.tone}>{result.type}</Badge>
           </div>
-          <div className="mt-3 line-clamp-3 text-xs leading-5 text-muted">{result.text}</div>
         </Link>
       })}
-    </div>
-
-    {!results.length&&<div className="mt-4 card p-8 text-center"><Search size={22} className="mx-auto text-faint"/><div className="mt-2 text-sm font-semibold text-ink">No matching knowledge</div><div className="mt-1 text-xs text-muted">Try a broader term or switch the source filter.</div></div>}
+    </div>:<div className="mt-4"><EmptyState icon={<Search size={18}/>} title="No matching knowledge" description="Try a broader term or switch the source filter. The search covers published lessons, debrief evidence, training, assessments and trends." action={<button onClick={()=>{setQ('');setFilter('All')}} className="secondary-btn">Clear search</button>}/></div>}
   </>
 }

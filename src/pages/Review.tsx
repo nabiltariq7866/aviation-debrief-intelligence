@@ -1,7 +1,8 @@
-import { CheckCircle2, LockKeyhole, ShieldCheck, UserCheck } from 'lucide-react'
+import { ArrowRight, CheckCircle2, FileSearch2, LockKeyhole, ShieldCheck, UserCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Badge, PageHeader } from '../components/ui'
+import { Badge, CustomSelect, EmptyState, PageHeader, Progress } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
+import type { Persona } from '../data/types'
 
 export default function Review(){
   const {lessons,publishLesson,persona,setPersona,currentActor}=useDemo()
@@ -12,29 +13,57 @@ export default function Review(){
     <PageHeader
       eyebrow="Human-in-the-loop"
       title="Trainer / checker review"
-      description="AI-generated lesson candidates remain advisory until an authorized trainer or checker validates them for wider organizational use."
-      actions={<Badge tone={canPublish?'success':'muted'}>{currentActor} · {persona}</Badge>}
+      description="Review AI-generated lesson candidates against their supporting human-authored evidence before anything becomes organization-wide operational knowledge."
+      actions={<div className="w-[220px]"><CustomSelect size="sm" value={persona} onChange={value=>setPersona(value as Persona)} options={[
+        {value:'Crew Member',label:'Crew Member',description:'Evidence access only'},
+        {value:'Trainer',label:'Trainer',description:'Can validate & publish'},
+        {value:'Checker',label:'Checker',description:'Can validate & publish'},
+      ]} menuWidth={240}/></div>}
     />
 
-    <div className="rounded-2xl border border-success/20 bg-success/5 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-ink"><ShieldCheck size={16} className="text-success"/>Safety-critical decision boundary preserved</div>
-      <p className="mt-2 max-w-4xl text-xs leading-5 text-muted">This review validates whether AI-organized knowledge accurately reflects the supporting human debrief evidence before publication. It does not determine flight safety, crew fitness or assessment outcomes.</p>
-    </div>
+    <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+      <div className="space-y-3">
+        {pending.length?pending.map(l=><div key={l.id} className="card overflow-hidden">
+          <div className="p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2"><Badge tone="accent">AI candidate</Badge><span className="text-[9px] text-faint">{l.id} · {l.category}</span></div>
+                <h2 className="mt-3 text-[15px] font-semibold leading-5 text-ink">{l.title}</h2>
+                <p className="mt-2 max-w-4xl text-[11px] leading-5 text-muted">{l.summary}</p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <div className="panel-soft p-2.5"><div className="data-label">Evidence</div><div className="mt-1 text-base font-semibold text-ink">{l.sourceDebriefIds.length}</div></div>
+                  <div className="panel-soft p-2.5"><div className="data-label">Occurrences</div><div className="mt-1 text-base font-semibold text-ink">{l.occurrences}</div></div>
+                  <div className="panel-soft p-2.5"><div className="data-label">Crews</div><div className="mt-1 text-base font-semibold text-ink">{l.crews}</div></div>
+                </div>
+                <div className="mt-4"><div className="mb-2 flex justify-between text-[9px]"><span className="text-faint">AI confidence — advisory only</span><span className="font-semibold text-accent">{l.confidence}%</span></div><Progress value={l.confidence} tone="accent"/></div>
+              </div>
+              <div className="flex shrink-0 flex-row gap-2 lg:flex-col">
+                <Link to={`/lessons/${l.id}`} className="secondary-btn"><FileSearch2 size={14}/>Review evidence</Link>
+                <button disabled={!canPublish} onClick={()=>publishLesson(l.id)} className="primary-btn"><CheckCircle2 size={15}/>Validate & publish</button>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-line bg-panel/30 px-4 py-3"><div className="text-[9px] text-muted">Publication authority: <span className="font-semibold text-ink">Trainer / Checker only</span></div><Link to={`/lessons/${l.id}`} className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent">Open traceability <ArrowRight size={12}/></Link></div>
+        </div>):<EmptyState icon={<CheckCircle2 size={18}/>} title="Review queue clear" description="There are no AI-generated lesson candidates waiting for trainer/checker validation."/>}
+      </div>
 
-    {!canPublish&&<div className="mt-4 rounded-2xl border border-purple/20 bg-purple/5 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-ink"><LockKeyhole size={16} className="text-purple"/>Crew persona is read-only for publication</div>
-      <div className="mt-2 text-xs leading-5 text-muted">Crew members can inspect lesson evidence, but only Trainer or Checker personas can validate organization-wide publication in this demo.</div>
-      <div className="mt-3 flex gap-2"><button onClick={()=>setPersona('Trainer')} className="secondary-btn"><UserCheck size={14}/>Switch to Trainer</button><button onClick={()=>setPersona('Checker')} className="secondary-btn"><UserCheck size={14}/>Switch to Checker</button></div>
-    </div>}
-
-    <div className="mt-4 space-y-3">
-      {pending.map(l=><div key={l.id} className="card p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div><div className="flex items-center gap-2"><div className="text-sm font-semibold text-ink">{l.title}</div><Badge tone="accent">AI candidate</Badge></div><div className="mt-2 max-w-3xl text-xs leading-5 text-muted">{l.summary}</div><div className="mt-2 text-[9px] text-faint">{l.sourceDebriefIds.length} supporting records · {l.confidence}% AI confidence</div></div>
-          <div className="flex shrink-0 gap-2"><Link to={`/lessons/${l.id}`} className="secondary-btn">Review evidence</Link><button disabled={!canPublish} onClick={()=>publishLesson(l.id)} className="primary-btn"><CheckCircle2 size={15}/>Validate & publish</button></div>
+      <div className="space-y-4">
+        <div className={`rounded-2xl border p-4 ${canPublish?'border-success/20 bg-success/5':'border-purple/20 bg-purple/5'}`}>
+          <div className="flex items-start gap-3">
+            <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${canPublish?'bg-success/10 text-success':'bg-purple/10 text-purple'}`}>{canPublish?<UserCheck size={16}/>:<LockKeyhole size={16}/>}</div>
+            <div><div className="text-sm font-semibold text-ink">{canPublish?'Validation authority active':'Read-only crew persona'}</div><div className="mt-1 text-[10px] leading-5 text-muted">{currentActor} · {persona}. {canPublish?'This persona can validate lesson candidates after reviewing evidence.':'Crew members can inspect evidence but cannot publish organization-wide lessons.'}</div></div>
+          </div>
         </div>
-      </div>)}
-      {!pending.length&&<div className="card p-8 text-center"><CheckCircle2 size={24} className="mx-auto text-success"/><div className="mt-2 text-sm font-semibold text-ink">Review queue clear</div><div className="mt-1 text-xs text-muted">There are no AI lesson candidates awaiting validation.</div></div>}
+
+        <div className="card p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink"><ShieldCheck size={16} className="text-success"/>Safety-critical boundary</div>
+          <div className="mt-3 space-y-3 text-[10px] leading-5 text-muted">
+            <div className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-success"/><span>AI can organize, summarize, classify and find similar historical material.</span></div>
+            <div className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent"/><span>Qualified humans determine whether the candidate accurately reflects the evidence.</span></div>
+            <div className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-danger"/><span>The platform does not determine flight safety, crew fitness or assessment outcomes.</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </>
 }
