@@ -7,6 +7,7 @@
     <title>Operational Learning Intelligence</title>
     <script>
       (function () {
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
         var theme = 'dark'
         try {
           var savedTheme = localStorage.getItem('aviation-theme')

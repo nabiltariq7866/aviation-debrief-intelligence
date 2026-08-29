@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { CustomSelect } from './ui'
 import { useDemo } from '../state/DemoContext'
 import type { Persona } from '../data/types'
@@ -66,6 +66,12 @@ export default function Layout(){
   useEffect(()=>{
     setMobileOpen(false)
     setQuery('')
+  },[location.pathname])
+
+  useLayoutEffect(()=>{
+    window.scrollTo(0,0)
+    document.documentElement.scrollTop=0
+    document.body.scrollTop=0
   },[location.pathname])
 
   const activeLabel=useMemo(()=>nav.flatMap(group=>group.items).find(item=>location.pathname.startsWith(item.to))?.label||'Operational Learning',[location.pathname])
