@@ -74,13 +74,13 @@ export function Modal({open,onClose,title,description,children,footer,size='md'}
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <button aria-label="Close modal" onClick={onClose} className="absolute inset-0 bg-black/65 backdrop-blur-sm"/>
-      <div role="dialog" aria-modal="true" className={`relative z-10 max-h-[90vh] w-full overflow-hidden rounded-2xl border border-line bg-surface ${width}`} style={{boxShadow:'var(--shadow-float)'}}>
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+      <div role="dialog" aria-modal="true" className={`relative z-10 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-line bg-surface ${width}`} style={{boxShadow:'var(--shadow-float)'}}>
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div className="min-w-0"><h3 className="text-base font-semibold tracking-[-.02em] text-ink">{title}</h3>{description&&<p className="mt-1 text-xs leading-5 text-muted">{description}</p>}</div>
           <button onClick={onClose} className="icon-btn h-8 w-8 shrink-0 border-0 bg-panel"><X size={15}/></button>
         </div>
-        <div className="max-h-[calc(90vh-150px)] overflow-y-auto p-5">{children}</div>
-        {footer&&<div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-panel/40 px-5 py-4">{footer}</div>}
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+        {footer&&<div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-panel/40 px-5 py-4">{footer}</div>}
       </div>
     </div>,
     document.body,
