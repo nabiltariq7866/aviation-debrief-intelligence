@@ -43,6 +43,7 @@ export default function Extensions(){
     const profile=profiles.find(p=>p.id===audio.profileId)
     const id=createDebrief({
       type:'Post-Mission',
+      missionType:'SAR',
       title:audio.title,
       mission:audio.mission,
       date:'2026-08-29',

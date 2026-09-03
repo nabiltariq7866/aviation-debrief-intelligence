@@ -1,17 +1,21 @@
-import { ArrowRight, CheckCircle2, Clock3, FileSearch2, ShieldCheck, UsersRound } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Clock3, FileSearch2, ShieldCheck, UsersRound, Wrench } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { Badge, EmptyState, PageHeader, Progress, SectionCard } from '../components/ui'
+import { Badge, CustomSelect, EmptyState, PageHeader, Progress, SectionCard } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
+import type { CorrectiveActionStatus, MissionType } from '../data/types'
+
+const actionTone=(status?:CorrectiveActionStatus)=>status==='Closed'?'success':status==='In Progress'?'accent':'danger'
 
 export default function LessonDetail(){
   const {id}=useParams()
-  const {lessons,debriefs,publishLesson,persona,currentActor,audit,profiles,acknowledgements,acknowledgeLesson}=useDemo()
+  const {lessons,debriefs,publishLesson,updateCorrectiveAction,persona,currentActor,audit,profiles,acknowledgements,acknowledgeLesson}=useDemo()
   const l=lessons.find(x=>x.id===id)
   if(!l)return <EmptyState icon={<FileSearch2 size={18}/>} title="Lesson not found" description="This knowledge item is not available in the current demo state."/>
 
   const canPublish=persona==='Trainer'||persona==='Checker'
   const timeline=audit.filter(event=>event.entityId===l.id).slice(0,8)
   const acknowledgedProfiles=profiles.filter(profile=>acknowledgements.some(a=>a.lessonId===l.id&&a.profileId===profile.id))
+  const missionTypes=Array.from(new Set(l.sourceDebriefIds.map(sid=>debriefs.find(d=>d.id===sid)?.missionType).filter(Boolean))) as MissionType[]
 
   return <>
     <PageHeader
@@ -21,42 +25,52 @@ export default function LessonDetail(){
       actions={l.status==='Draft'?<button disabled={!canPublish} onClick={()=>publishLesson(l.id)} className="primary-btn"><CheckCircle2 size={15}/>Validate & publish</button>:<Badge tone="success"><CheckCircle2 size={11}/>Published knowledge</Badge>}
     />
 
-    <div className="mb-4 grid gap-3 sm:grid-cols-4">
+    <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <div className="card p-3.5"><div className="data-label">Occurrences</div><div className="mt-1.5 text-xl font-semibold text-ink">{l.occurrences}</div></div>
       <div className="card p-3.5"><div className="data-label">Crews</div><div className="mt-1.5 text-xl font-semibold text-ink">{l.crews}</div></div>
       <div className="card p-3.5"><div className="data-label">Evidence records</div><div className="mt-1.5 text-xl font-semibold text-ink">{l.sourceDebriefIds.length}</div></div>
+      <div className="card p-3.5"><div className="data-label">Mission types</div><div className="mt-1.5 text-xl font-semibold text-ink">{missionTypes.length}</div><div className="mt-1 truncate text-[9px] text-faint">{missionTypes.join(' · ')}</div></div>
       <div className="card p-3.5"><div className="data-label">AI confidence</div><div className="mt-1.5 text-xl font-semibold text-accent">{l.confidence}%</div><div className="mt-2"><Progress value={l.confidence} tone={l.confidence>=90?'success':'accent'}/></div></div>
     </div>
 
     <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
       <div className="space-y-4">
-        <SectionCard title="Supporting evidence" description="Every lesson remains traceable to the human-authored crew, training and assessment observations that support it">
+        <SectionCard title="Cross-mission evidence" description="The same validated theme can be inspected across SAR, EMS, Training and Firefighting records instead of remaining isolated inside one mission type.">
+          <div className="mb-3 flex flex-wrap gap-2">{missionTypes.map(type=><Badge key={type} tone={type==='SAR'?'info':type==='EMS'?'success':type==='Training'?'purple':'accent'}>{type}</Badge>)}</div>
           <div className="space-y-2">{l.sourceDebriefIds.map(sid=>{
             const d=debriefs.find(x=>x.id===sid)
             return d?<Link to={`/debriefs/${sid}`} key={sid} className="group flex items-start gap-3 rounded-xl border border-line bg-panel/40 p-3.5 transition hover:border-accent/30">
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-line bg-surface text-accent"><FileSearch2 size={15}/></div>
-              <div className="min-w-0 flex-1"><div className="text-[11px] font-semibold text-ink group-hover:text-accent">{d.title}</div><div className="mt-1 text-[9px] text-faint">{d.id} · {d.type} · {d.date} · {d.crew.join(', ')}</div><div className="mt-2 line-clamp-2 text-[10px] leading-4 text-muted">{d.aiSummary||d.rawNotes}</div></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><div className="text-[11px] font-semibold text-ink group-hover:text-accent">{d.title}</div><Badge tone={d.missionType==='SAR'?'info':d.missionType==='EMS'?'success':d.missionType==='Training'?'purple':'accent'}>{d.missionType}</Badge></div><div className="mt-1 text-[9px] text-faint">{d.id} · {d.type} · {d.date} · {d.crew.join(', ')}</div><div className="mt-2 line-clamp-2 text-[10px] leading-4 text-muted">{d.aiSummary||d.rawNotes}</div></div>
               <ArrowRight size={12} className="mt-1 shrink-0 text-faint transition group-hover:text-accent"/>
             </Link>:<div key={sid} className="rounded-xl border border-line bg-panel/30 p-3 text-[10px] text-muted">Historical evidence reference {sid}</div>
           })}</div>
         </SectionCard>
 
-        <SectionCard title="Knowledge distribution" description="Published lessons become searchable across the wider organization while remaining evidence-linked">
-          <div className="rounded-xl border border-line bg-panel/40 p-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div><div className="text-xs font-semibold text-ink">Distribution readiness</div><div className="mt-1 text-[10px] leading-4 text-muted">{l.status==='Published'?'Human validation is complete and this lesson is available in the Knowledge Base.':'This candidate remains private to the review workflow until a Trainer or Checker validates it.'}</div></div>
-              <Badge tone={l.status==='Published'?'success':'accent'}>{l.status==='Published'?'Searchable':'Validation required'}</Badge>
+        {l.status==='Published'&&<SectionCard title="Corrective action" description="Track what happened after the lesson was validated so the learning workflow closes the loop instead of stopping at publication.">
+          <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+            <div className="rounded-xl border border-line bg-panel/40 p-4">
+              <div className="flex items-start gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent"><Wrench size={16}/></div><div><div className="text-xs font-semibold text-ink">Accountability status</div><div className="mt-1 text-[10px] leading-5 text-muted">Owner: <span className="font-semibold text-ink">{l.correctiveActionOwner||'Training Standards'}</span> · Last updated {l.correctiveActionUpdatedAt||'Not yet updated'}</div></div></div>
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between text-[9px]"><span className="font-semibold text-muted">Status</span><Badge tone={actionTone(l.correctiveActionStatus)}>{l.correctiveActionStatus||'Open'}</Badge></div>
+              {canPublish?<CustomSelect value={l.correctiveActionStatus||'Open'} onChange={value=>updateCorrectiveAction(l.id,value as CorrectiveActionStatus)} options={[
+                {value:'Open',label:'Open',description:'Action identified, not yet started'},
+                {value:'In Progress',label:'In Progress',description:'Owner is actively addressing it'},
+                {value:'Closed',label:'Closed',description:'Action completed and closed'},
+              ]}/>:<div className="rounded-xl border border-line bg-panel/35 px-3 py-2.5 text-[10px] text-muted">Crew persona can view status but cannot change corrective action.</div>}
             </div>
           </div>
+        </SectionCard>}
+
+        <SectionCard title="Knowledge distribution" description="Published lessons become searchable across the wider organization while remaining evidence-linked">
+          <div className="rounded-xl border border-line bg-panel/40 p-4"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-semibold text-ink">Distribution readiness</div><div className="mt-1 text-[10px] leading-4 text-muted">{l.status==='Published'?'Human validation is complete and this lesson is available in the Knowledge Base.':'This candidate remains private to the review workflow until a Trainer or Checker validates it.'}</div></div><Badge tone={l.status==='Published'?'success':'accent'}>{l.status==='Published'?'Searchable':'Validation required'}</Badge></div></div>
         </SectionCard>
 
         {l.status==='Published'&&<SectionCard title="Acknowledgement tracking" description="Optional extensive demo capability showing which crew profiles have acknowledged this published lesson">
           <div className="grid gap-2 sm:grid-cols-2">{profiles.map(profile=>{
             const acknowledged=acknowledgements.some(a=>a.lessonId===l.id&&a.profileId===profile.id)
-            return <div key={profile.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel/35 p-3.5">
-              <div className="min-w-0"><div className="truncate text-[11px] font-semibold text-ink">{profile.name}</div><div className="mt-1 text-[9px] text-faint">{profile.role} · {profile.base}</div></div>
-              {acknowledged?<Badge tone="success">Acknowledged</Badge>:<button onClick={()=>acknowledgeLesson(l.id,profile.id)} className="secondary-btn h-9 min-h-0 px-3 text-[10px]">Mark acknowledged</button>}
-            </div>
+            return <div key={profile.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-panel/35 p-3.5"><div className="min-w-0"><div className="truncate text-[11px] font-semibold text-ink">{profile.name}</div><div className="mt-1 text-[9px] text-faint">{profile.role} · {profile.base}</div></div>{acknowledged?<Badge tone="success">Acknowledged</Badge>:<button onClick={()=>acknowledgeLesson(l.id,profile.id)} className="secondary-btn h-9 min-h-0 px-3 text-[10px]">Mark acknowledged</button>}</div>
           })}</div>
           <div className="mt-3 text-[9px] text-faint">{acknowledgedProfiles.length} of {profiles.length} profiles acknowledged in this demo.</div>
         </SectionCard>}
@@ -68,14 +82,10 @@ export default function LessonDetail(){
         </div>
 
         <SectionCard title="Knowledge timeline" description="When this learning signal appeared and how current it is">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3"><div className="inline-flex items-center gap-2 text-[10px] text-muted"><Clock3 size={12}/>First seen</div><div className="text-[10px] font-semibold text-ink">{l.firstSeen}</div></div>
-            <div className="flex items-center justify-between gap-3"><div className="inline-flex items-center gap-2 text-[10px] text-muted"><Clock3 size={12}/>Last seen</div><div className="text-[10px] font-semibold text-ink">{l.lastSeen}</div></div>
-            <div className="flex items-center justify-between gap-3"><div className="inline-flex items-center gap-2 text-[10px] text-muted"><UsersRound size={12}/>Crews represented</div><div className="text-[10px] font-semibold text-ink">{l.crews}</div></div>
-          </div>
+          <div className="space-y-3"><div className="flex items-center justify-between gap-3"><div className="inline-flex items-center gap-2 text-[10px] text-muted"><Clock3 size={12}/>First seen</div><div className="text-[10px] font-semibold text-ink">{l.firstSeen}</div></div><div className="flex items-center justify-between gap-3"><div className="inline-flex items-center gap-2 text-[10px] text-muted"><Clock3 size={12}/>Last seen</div><div className="text-[10px] font-semibold text-ink">{l.lastSeen}</div></div><div className="flex items-center justify-between gap-3"><div className="inline-flex items-center gap-2 text-[10px] text-muted"><UsersRound size={12}/>Crews represented</div><div className="text-[10px] font-semibold text-ink">{l.crews}</div></div></div>
         </SectionCard>
 
-        <SectionCard title="Audit history" description="AI actions and human actions are explicitly separated">
+        <SectionCard title="Audit history" description="AI actions, human validation and corrective-action changes are explicitly separated">
           {timeline.length?<div className="space-y-2">{timeline.map(event=><div key={event.id} className="rounded-xl border border-line bg-panel/35 p-3"><div className="flex items-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${event.tone==='success'?'bg-success':event.tone==='purple'?'bg-purple':'bg-accent'}`}/><div className="text-[10px] font-semibold text-ink">{event.action}</div></div><div className="mt-1 text-[9px] leading-4 text-muted">{event.detail}</div><div className="mt-1 text-[8px] text-faint">{event.actor} · {event.role} · {event.time}</div></div>)}</div>:<div className="text-[10px] text-muted">No audit history yet.</div>}
         </SectionCard>
       </div>

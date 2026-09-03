@@ -1,6 +1,8 @@
 export type DebriefType='Post-Mission'|'Training Sortie'|'Assessment Flight'
 export type DebriefStatus='Draft'|'AI Structured'|'Review Required'|'Published'
+export type MissionType='SAR'|'EMS'|'Training'|'Firefighting'
 export type LessonStatus='Draft'|'Published'
+export type CorrectiveActionStatus='Open'|'In Progress'|'Closed'
 export type Persona='Crew Member'|'Trainer'|'Checker'
 export type AuditTone='success'|'accent'|'purple'|'danger'|'muted'
 
@@ -13,9 +15,20 @@ export interface Observation{
   source?:'Self Evaluation'|'Team Evaluation'|'Trainer / Checker'|'General Debrief'
 }
 
+export interface MaintenanceNote{
+  id:string
+  title:string
+  status:string
+  loggedAt:string
+  aircraft:string
+  summary:string
+  outcome:string
+}
+
 export interface Debrief{
   id:string
   type:DebriefType
+  missionType:MissionType
   title:string
   mission:string
   date:string
@@ -37,6 +50,8 @@ export interface Debrief{
   aiLessonText?:string
   similarDebriefIds?:string[]
   linkedProfileIds?:string[]
+  peakSeason?:boolean
+  relatedMaintenanceNote?:MaintenanceNote
 }
 
 export interface Lesson{
@@ -52,6 +67,11 @@ export interface Lesson{
   status:LessonStatus
   confidence:number
   safetyNote:string
+  relevantRoles:string[]
+  relevantAircraft:string[]
+  correctiveActionStatus?:CorrectiveActionStatus
+  correctiveActionOwner?:string
+  correctiveActionUpdatedAt?:string
 }
 
 export interface Trend{

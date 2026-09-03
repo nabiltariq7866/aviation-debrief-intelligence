@@ -13,10 +13,12 @@ import type {
   Acknowledgement,
   ActivityEvent,
   AuditEvent,
+  CorrectiveActionStatus,
   Debrief,
   DebriefType,
   DemoSettings,
   Lesson,
+  MissionType,
   Persona,
   TrainingProfile,
   Trend,
@@ -24,6 +26,7 @@ import type {
 
 type NewDebriefInput={
   type:DebriefType
+  missionType:MissionType
   title:string
   mission:string
   date:string
@@ -54,6 +57,7 @@ type DemoContextValue={
   createDebrief:(input:NewDebriefInput)=>string
   analyzeDebrief:(id:string)=>void
   publishLesson:(lessonId:string)=>void
+  updateCorrectiveAction:(lessonId:string,status:CorrectiveActionStatus)=>void
   acknowledgeLesson:(lessonId:string,profileId:string)=>void
   updateSettings:(patch:Partial<DemoSettings>)=>void
   setPersona:(persona:Persona)=>void
@@ -61,10 +65,12 @@ type DemoContextValue={
 }
 
 const DemoContext=createContext<DemoContextValue|null>(null)
+const STORE='aviation-client-review-v1'
+const key=(name:string)=>`${STORE}-${name}`
 
-const load=<T,>(key:string,fallback:T):T=>{
+const load=<T,>(name:string,fallback:T):T=>{
   try{
-    const raw=localStorage.getItem(key)
+    const raw=localStorage.getItem(key(name))
     return raw?JSON.parse(raw):fallback
   }catch{
     return fallback
@@ -78,23 +84,23 @@ const actorForPersona=(persona:Persona)=>{
 }
 
 export function DemoProvider({children}:{children:ReactNode}){
-  const [debriefs,setDebriefs]=useState<Debrief[]>(()=>load('aviation-demo-debriefs',initialDebriefs))
-  const [lessons,setLessons]=useState<Lesson[]>(()=>load('aviation-demo-lessons',initialLessons))
-  const [trends,setTrends]=useState<Trend[]>(()=>load('aviation-demo-trends',initialTrends))
-  const [profiles,setProfiles]=useState<TrainingProfile[]>(()=>load('aviation-demo-profiles',initialProfiles))
-  const [activity,setActivity]=useState<ActivityEvent[]>(()=>load('aviation-demo-activity',initialActivity))
-  const [audit,setAudit]=useState<AuditEvent[]>(()=>load('aviation-demo-audit',initialAudit))
-  const [acknowledgements,setAcknowledgements]=useState<Acknowledgement[]>(()=>load('aviation-demo-acks',initialAcknowledgements))
-  const [settings,setSettings]=useState<DemoSettings>(()=>load('aviation-demo-settings',initialSettings))
-  const [personaState,setPersonaState]=useState<Persona>(()=>load('aviation-demo-persona','Trainer' as Persona))
+  const [debriefs,setDebriefs]=useState<Debrief[]>(()=>load('debriefs',initialDebriefs))
+  const [lessons,setLessons]=useState<Lesson[]>(()=>load('lessons',initialLessons))
+  const [trends,setTrends]=useState<Trend[]>(()=>load('trends',initialTrends))
+  const [profiles,setProfiles]=useState<TrainingProfile[]>(()=>load('profiles',initialProfiles))
+  const [activity,setActivity]=useState<ActivityEvent[]>(()=>load('activity',initialActivity))
+  const [audit,setAudit]=useState<AuditEvent[]>(()=>load('audit',initialAudit))
+  const [acknowledgements,setAcknowledgements]=useState<Acknowledgement[]>(()=>load('acks',initialAcknowledgements))
+  const [settings,setSettings]=useState<DemoSettings>(()=>load('settings',initialSettings))
+  const [personaState,setPersonaState]=useState<Persona>(()=>load('persona','Trainer' as Persona))
 
-  const persist=(key:string,value:unknown)=>localStorage.setItem(key,JSON.stringify(value))
+  const persist=(name:string,value:unknown)=>localStorage.setItem(key(name),JSON.stringify(value))
   const currentActor=actorForPersona(personaState)
 
   const addActivity=(event:Omit<ActivityEvent,'id'>)=>{
     setActivity(prev=>{
-      const next=[{...event,id:`EV-${Date.now()}-${Math.random().toString(36).slice(2,6)}`},...prev].slice(0,40)
-      persist('aviation-demo-activity',next)
+      const next=[{...event,id:`EV-${Date.now()}-${Math.random().toString(36).slice(2,6)}`},...prev].slice(0,50)
+      persist('activity',next)
       return next
     })
   }
@@ -102,31 +108,32 @@ export function DemoProvider({children}:{children:ReactNode}){
   const addAudit=(event:Omit<AuditEvent,'id'>)=>{
     if(!settings.detailedAudit&&event.entityType!=='System')return
     setAudit(prev=>{
-      const next=[{...event,id:`AUD-${Date.now()}-${Math.random().toString(36).slice(2,6)}`},...prev].slice(0,120)
-      persist('aviation-demo-audit',next)
+      const next=[{...event,id:`AUD-${Date.now()}-${Math.random().toString(36).slice(2,6)}`},...prev].slice(0,160)
+      persist('audit',next)
       return next
     })
   }
 
   const setPersona=(persona:Persona)=>{
     setPersonaState(persona)
-    persist('aviation-demo-persona',persona)
+    persist('persona',persona)
     addActivity({title:'Demo persona changed',detail:`Workspace is now demonstrating ${persona} permissions and workflows.`,time:'Just now',tone:'purple'})
   }
 
   const createDebrief=(input:NewDebriefInput)=>{
-    const id=`DBR-${Math.floor(2100+Math.random()*700)}`
+    const id=`DBR-${Math.floor(2600+Math.random()*700)}`
     const item:Debrief={
       id,
       ...input,
       status:'Draft',
       createdAt:'Just now',
       observations:[],
+      peakSeason:false,
     }
 
     setDebriefs(prev=>{
       const next=[item,...prev]
-      persist('aviation-demo-debriefs',next)
+      persist('debriefs',next)
       return next
     })
 
@@ -137,7 +144,7 @@ export function DemoProvider({children}:{children:ReactNode}){
           debriefIds:[id,...profile.debriefIds.filter(existing=>existing!==id)],
           lastAssessment:input.type==='Assessment Flight'?input.date:profile.lastAssessment,
         }:profile)
-        persist('aviation-demo-profiles',next)
+        persist('profiles',next)
         return next
       })
 
@@ -155,12 +162,12 @@ export function DemoProvider({children}:{children:ReactNode}){
       })
     }
 
-    addActivity({title:'New debrief submitted',detail:`${input.mission} entered the learning workflow.`,time:'Just now',tone:'purple'})
+    addActivity({title:'New debrief submitted',detail:`${input.missionType} · ${input.mission} entered the learning workflow.`,time:'Just now',tone:'purple'})
     addAudit({
       entityType:'Debrief',
       entityId:id,
       action:'Debrief submitted',
-      detail:`${input.type} source record preserved with self, team and trainer/checker context where provided.`,
+      detail:`${input.type} / ${input.missionType} source record preserved with self, team and trainer/checker context where provided.`,
       actor:input.createdBy,
       role:personaState,
       time:'Just now',
@@ -201,7 +208,7 @@ export function DemoProvider({children}:{children:ReactNode}){
 
     const similar=debriefs
       .filter(d=>d.id!==id&&`${d.rawNotes} ${d.improve} ${d.aiSummary||''}`.toLowerCase().includes(keyword))
-      .slice(0,5)
+      .slice(0,6)
       .map(d=>d.id)
 
     const observations=[
@@ -217,12 +224,12 @@ export function DemoProvider({children}:{children:ReactNode}){
         ...d,
         status:'Review Required' as const,
         observations,
-        aiSummary:`AI organized the human-authored debrief into structured observations. The strongest recurring theme is ${category.toLowerCase()}. ${similar.length} supporting historical record${similar.length===1?'':'s'} were identified for human review.`,
+        aiSummary:`AI organized the human-authored debrief into structured observations. The strongest recurring theme is ${category.toLowerCase()}. ${similar.length} supporting historical record${similar.length===1?'':'s'} across the knowledge base were identified for human review.`,
         aiLessonTitle:lessonTitle,
         aiLessonText:target.improve||'Review the identified learning point and decide whether it should become wider organizational knowledge.',
         similarDebriefIds:similar,
       }:d)
-      persist('aviation-demo-debriefs',next)
+      persist('debriefs',next)
       return next
     })
 
@@ -240,11 +247,16 @@ export function DemoProvider({children}:{children:ReactNode}){
       status:'Draft',
       confidence:similar.length>=3?93:similar.length>=1?84:72,
       safetyNote:'AI-generated knowledge candidate. Human validation is required before publication. AI does not make or replace safety-critical operational, training or assessment decisions.',
+      relevantRoles:target.type==='Post-Mission'?['Captain','First Officer']:['Captain','First Officer','Trainer','Checker'],
+      relevantAircraft:[target.aircraft],
+      correctiveActionStatus:'Open',
+      correctiveActionOwner:'Training Standards',
+      correctiveActionUpdatedAt:'Just now',
     }
 
     setLessons(prev=>{
       const next=[candidate,...prev]
-      persist('aviation-demo-lessons',next)
+      persist('lessons',next)
       return next
     })
 
@@ -263,31 +275,21 @@ export function DemoProvider({children}:{children:ReactNode}){
       }
       setTrends(prev=>{
         const next=[trend,...prev.filter(t=>t.title!==trend.title)]
-        persist('aviation-demo-trends',next)
+        persist('trends',next)
         return next
       })
     }
 
     addActivity({title:'AI debrief analysis completed',detail:`${id} structured, lesson candidate created and historical similarity checked.`,time:'Just now',tone:'accent'})
     addAudit({
-      entityType:'Debrief',
-      entityId:id,
-      action:'AI organization completed',
+      entityType:'Debrief',entityId:id,action:'AI organization completed',
       detail:`Structured ${observations.length} observations, identified ${similar.length} similar records and created lesson candidate ${lessonId}.`,
-      actor:'AeroLearn AI',
-      role:'AI System',
-      time:'Just now',
-      tone:'accent',
+      actor:'AeroLearn AI',role:'AI System',time:'Just now',tone:'accent',
     })
     addAudit({
-      entityType:'Lesson',
-      entityId:lessonId,
-      action:'Lesson candidate created',
+      entityType:'Lesson',entityId:lessonId,action:'Lesson candidate created',
       detail:`Candidate generated from ${id} with ${similar.length} supporting historical record${similar.length===1?'':'s'}.`,
-      actor:'AeroLearn AI',
-      role:'AI System',
-      time:'Just now',
-      tone:'accent',
+      actor:'AeroLearn AI',role:'AI System',time:'Just now',tone:'accent',
     })
   }
 
@@ -296,27 +298,48 @@ export function DemoProvider({children}:{children:ReactNode}){
     if(!lesson)return
 
     setLessons(prev=>{
-      const next=prev.map(l=>l.id===lessonId?{...l,status:'Published' as const}:l)
-      persist('aviation-demo-lessons',next)
+      const next=prev.map(l=>l.id===lessonId?{
+        ...l,
+        status:'Published' as const,
+        correctiveActionStatus:l.correctiveActionStatus||'Open',
+        correctiveActionOwner:l.correctiveActionOwner||'Training Standards',
+        correctiveActionUpdatedAt:l.correctiveActionUpdatedAt||'Just now',
+      }:l)
+      persist('lessons',next)
       return next
     })
 
     setDebriefs(prev=>{
       const next=prev.map(d=>lesson.sourceDebriefIds.includes(d.id)?{...d,status:'Published' as const}:d)
-      persist('aviation-demo-debriefs',next)
+      persist('debriefs',next)
       return next
     })
 
-    addActivity({title:'Lesson published to operational knowledge',detail:`${lesson.title} is now searchable across the organization.`,time:'Just now',tone:'success'})
+    addActivity({title:'Lesson published to operational knowledge',detail:`${lesson.title} is now searchable across the organization with corrective-action tracking enabled.`,time:'Just now',tone:'success'})
     addAudit({
-      entityType:'Lesson',
-      entityId:lessonId,
-      action:'Lesson validated & published',
-      detail:'Human validation completed. The lesson is now available in the searchable operational knowledge base.',
-      actor:currentActor,
-      role:personaState,
-      time:'Just now',
-      tone:'success',
+      entityType:'Lesson',entityId:lessonId,action:'Lesson validated & published',
+      detail:'Human validation completed. The lesson is now available in the searchable operational knowledge base and its corrective action begins as an open item.',
+      actor:currentActor,role:personaState,time:'Just now',tone:'success',
+    })
+  }
+
+  const updateCorrectiveAction=(lessonId:string,status:CorrectiveActionStatus)=>{
+    const lesson=lessons.find(l=>l.id===lessonId)
+    if(!lesson||lesson.status!=='Published')return
+    const previous=lesson.correctiveActionStatus||'Open'
+    if(previous===status)return
+
+    setLessons(prev=>{
+      const next=prev.map(l=>l.id===lessonId?{...l,correctiveActionStatus:status,correctiveActionUpdatedAt:'Just now'}:l)
+      persist('lessons',next)
+      return next
+    })
+
+    addActivity({title:'Corrective action status updated',detail:`${lesson.title}: ${previous} → ${status}.`,time:'Just now',tone:status==='Closed'?'success':'accent'})
+    addAudit({
+      entityType:'Lesson',entityId:lessonId,action:'Corrective action updated',
+      detail:`Corrective action moved from ${previous} to ${status}. Owner: ${lesson.correctiveActionOwner||'Training Standards'}.`,
+      actor:currentActor,role:personaState,time:'Just now',tone:status==='Closed'?'success':'accent',
     })
   }
 
@@ -326,47 +349,23 @@ export function DemoProvider({children}:{children:ReactNode}){
     if(!profile||!lesson)return
     if(acknowledgements.some(a=>a.lessonId===lessonId&&a.profileId===profileId))return
 
-    const ack:Acknowledgement={
-      id:`ACK-${Date.now()}`,
-      lessonId,
-      profileId,
-      acknowledgedAt:'Just now',
-      acknowledgedBy:profile.name,
-    }
+    const ack:Acknowledgement={id:`ACK-${Date.now()}`,lessonId,profileId,acknowledgedAt:'Just now',acknowledgedBy:profile.name}
     setAcknowledgements(prev=>{
       const next=[ack,...prev]
-      persist('aviation-demo-acks',next)
+      persist('acks',next)
       return next
     })
     addActivity({title:'Lesson acknowledged',detail:`${profile.name} acknowledged “${lesson.title}”.`,time:'Just now',tone:'success'})
-    addAudit({
-      entityType:'Knowledge',
-      entityId:lessonId,
-      action:'Knowledge acknowledged',
-      detail:`${profile.name} acknowledged the published lesson.`,
-      actor:profile.name,
-      role:'Crew Member',
-      time:'Just now',
-      tone:'success',
-    })
+    addAudit({entityType:'Knowledge',entityId:lessonId,action:'Knowledge acknowledged',detail:`${profile.name} acknowledged the published lesson.`,actor:profile.name,role:'Crew Member',time:'Just now',tone:'success'})
   }
 
   const updateSettings=(patch:Partial<DemoSettings>)=>{
     setSettings(prev=>{
       const next={...prev,...patch}
-      persist('aviation-demo-settings',next)
+      persist('settings',next)
       return next
     })
-    addAudit({
-      entityType:'System',
-      entityId:'DEMO-CONFIG',
-      action:'Demo configuration updated',
-      detail:Object.entries(patch).map(([key,value])=>`${key}: ${String(value)}`).join(', '),
-      actor:currentActor,
-      role:personaState,
-      time:'Just now',
-      tone:'muted',
-    })
+    addAudit({entityType:'System',entityId:'DEMO-CONFIG',action:'Demo configuration updated',detail:Object.entries(patch).map(([k,v])=>`${k}: ${String(v)}`).join(', '),actor:currentActor,role:personaState,time:'Just now',tone:'muted'})
   }
 
   const resetDemo=()=>{
@@ -379,35 +378,21 @@ export function DemoProvider({children}:{children:ReactNode}){
     setAcknowledgements(initialAcknowledgements)
     setSettings(initialSettings)
     setPersonaState('Trainer')
-    persist('aviation-demo-debriefs',initialDebriefs)
-    persist('aviation-demo-lessons',initialLessons)
-    persist('aviation-demo-trends',initialTrends)
-    persist('aviation-demo-profiles',initialProfiles)
-    persist('aviation-demo-activity',initialActivity)
-    persist('aviation-demo-audit',initialAudit)
-    persist('aviation-demo-acks',initialAcknowledgements)
-    persist('aviation-demo-settings',initialSettings)
-    persist('aviation-demo-persona','Trainer')
+    persist('debriefs',initialDebriefs)
+    persist('lessons',initialLessons)
+    persist('trends',initialTrends)
+    persist('profiles',initialProfiles)
+    persist('activity',initialActivity)
+    persist('audit',initialAudit)
+    persist('acks',initialAcknowledgements)
+    persist('settings',initialSettings)
+    persist('persona','Trainer')
   }
 
   const value=useMemo(()=>({
-    debriefs,
-    lessons,
-    trends,
-    profiles,
-    activity,
-    audit,
-    acknowledgements,
-    settings,
-    persona:personaState,
-    currentActor,
-    createDebrief,
-    analyzeDebrief,
-    publishLesson,
-    acknowledgeLesson,
-    updateSettings,
-    setPersona,
-    resetDemo,
+    debriefs,lessons,trends,profiles,activity,audit,acknowledgements,settings,
+    persona:personaState,currentActor,createDebrief,analyzeDebrief,publishLesson,updateCorrectiveAction,
+    acknowledgeLesson,updateSettings,setPersona,resetDemo,
   }),[debriefs,lessons,trends,profiles,activity,audit,acknowledgements,settings,personaState,currentActor])
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>

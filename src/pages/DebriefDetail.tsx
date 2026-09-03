@@ -8,12 +8,15 @@ import {
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
+  Wrench,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Badge, EmptyState, PageHeader, SectionCard } from '../components/ui'
+import { Badge, EmptyState, Modal, PageHeader, SectionCard } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
 
 export default function DebriefDetail(){
+  const [maintenanceOpen,setMaintenanceOpen]=useState(false)
   const {id}=useParams()
   const {debriefs,lessons,profiles,audit,analyzeDebrief}=useDemo()
   const d=debriefs.find(x=>x.id===id)
@@ -28,7 +31,7 @@ export default function DebriefDetail(){
     <PageHeader
       eyebrow={`${d.type} · ${d.id}`}
       title={d.title}
-      description={`${d.mission} · ${d.aircraft} · ${d.location} · ${d.date}`}
+      description={`${d.missionType} · ${d.mission} · ${d.aircraft} · ${d.location} · ${d.date}`}
       actions={<div className="flex items-center gap-2">{d.status!=='Draft'&&<Badge tone={d.status==='Published'?'success':'accent'}>{d.status}</Badge>}{d.status==='Draft'&&<button onClick={()=>analyzeDebrief(d.id)} className="primary-btn"><Sparkles size={15}/>Run AI organization</button>}</div>}
     />
 
@@ -69,6 +72,15 @@ export default function DebriefDetail(){
           </div>
         </SectionCard>
 
+        {d.relatedMaintenanceNote&&<SectionCard title="Related maintenance context" description="A mocked bridge between operational learning and maintenance context — included to demonstrate future interoperability without claiming a live MRO integration.">
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-accent/20 bg-accent/10 text-accent"><Wrench size={16}/></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><div className="text-xs font-semibold text-ink">{d.relatedMaintenanceNote.id} · {d.relatedMaintenanceNote.title}</div><Badge tone="accent">Demo-linked context</Badge></div><div className="mt-1 text-[10px] text-muted">{d.relatedMaintenanceNote.aircraft} · {d.relatedMaintenanceNote.status}</div><div className="mt-2 line-clamp-2 text-[10px] leading-5 text-muted">{d.relatedMaintenanceNote.summary}</div></div></div>
+              <button onClick={()=>setMaintenanceOpen(true)} className="secondary-btn shrink-0">View maintenance note <ArrowRight size={13}/></button>
+            </div>
+          </div>
+        </SectionCard>}
+
         {d.type!=='Post-Mission'&&<SectionCard title="Training-profile linkage" description="Administrative evidence linkage only — AI does not change trainer/checker scores or assessment outcomes">
           {linkedProfiles.length?<div className="grid gap-2 sm:grid-cols-2">{linkedProfiles.map(profile=><Link to={`/training-profiles/${profile.id}`} key={profile.id} className="group flex items-center gap-3 rounded-xl border border-line bg-panel/40 p-3 transition hover:border-accent/30"><div className="grid h-9 w-9 place-items-center rounded-xl border border-purple/20 bg-purple/10 text-purple"><UserRoundCheck size={15}/></div><div className="min-w-0 flex-1"><div className="truncate text-[11px] font-semibold text-ink group-hover:text-accent">{profile.name}</div><div className="mt-0.5 text-[9px] text-faint">{profile.role} · record linked</div></div><ArrowRight size={12} className="text-faint"/></Link>)}</div>:<div className="text-xs text-muted">This seed record is represented in existing profile history where applicable.</div>}
         </SectionCard>}
@@ -99,5 +111,14 @@ export default function DebriefDetail(){
         </div>
       </div>
     </div>
+
+    <Modal open={maintenanceOpen} onClose={()=>setMaintenanceOpen(false)} title={d.relatedMaintenanceNote?.id||'Maintenance note'} description="Mocked maintenance context for the client demo — no live maintenance-system integration is being claimed." size="md">
+      {d.relatedMaintenanceNote&&<div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2"><div className="panel-soft p-3"><div className="data-label">Aircraft</div><div className="mt-1 text-xs font-semibold text-ink">{d.relatedMaintenanceNote.aircraft}</div></div><div className="panel-soft p-3"><div className="data-label">Status</div><div className="mt-1 text-xs font-semibold text-success">{d.relatedMaintenanceNote.status}</div></div></div>
+        <div className="rounded-xl border border-line bg-panel/40 p-4"><div className="data-label">Maintenance note</div><div className="mt-2 text-[11px] leading-6 text-muted">{d.relatedMaintenanceNote.summary}</div></div>
+        <div className="rounded-xl border border-success/20 bg-success/5 p-4"><div className="data-label text-success">Recorded outcome</div><div className="mt-2 text-[11px] leading-6 text-muted">{d.relatedMaintenanceNote.outcome}</div></div>
+        <div className="text-[9px] text-faint">Logged {d.relatedMaintenanceNote.loggedAt}</div>
+      </div>}
+    </Modal>
   </>
 }

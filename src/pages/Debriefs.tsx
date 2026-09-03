@@ -1,33 +1,40 @@
-import { ArrowRight, CalendarDays, ClipboardCheck, MapPin, Plane, Plus, UsersRound } from 'lucide-react'
+import { ArrowRight, CalendarDays, ClipboardCheck, Flame, MapPin, Plane, Plus, Snowflake, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Badge, CustomSelect, EmptyState, PageHeader, SearchField } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
-import type { DebriefType } from '../data/types'
+import type { DebriefType, MissionType } from '../data/types'
 
 const typeTone=(type:DebriefType)=>type==='Post-Mission'?'info':type==='Training Sortie'?'accent':'purple'
 const statusTone=(status:string)=>status==='Published'?'success':status==='Review Required'?'accent':status==='AI Structured'?'purple':'muted'
+const missionTone=(mission:MissionType)=>mission==='SAR'?'info':mission==='EMS'?'success':mission==='Training'?'purple':'accent'
 
 export default function Debriefs(){
   const {debriefs}=useDemo()
+  const [params]=useSearchParams()
   const [q,setQ]=useState('')
   const [type,setType]=useState<'All'|DebriefType>('All')
-  const [status,setStatus]=useState('All')
+  const [missionType,setMissionType]=useState<'All'|MissionType>('All')
+  const [status,setStatus]=useState(()=>params.get('status')||'All')
+  const [peakOnly,setPeakOnly]=useState(()=>params.get('peak')==='1')
 
-  const visible=useMemo(()=>debriefs.filter(d=>(type==='All'||d.type===type)&&(status==='All'||d.status===status)&&`${d.title} ${d.mission} ${d.crew.join(' ')} ${d.aircraft} ${d.location}`.toLowerCase().includes(q.toLowerCase())),[debriefs,q,type,status])
+  const visible=useMemo(()=>debriefs.filter(d=>(type==='All'||d.type===type)&&(missionType==='All'||d.missionType===missionType)&&(status==='All'||d.status===status)&&(!peakOnly||d.peakSeason)&&`${d.title} ${d.mission} ${d.missionType} ${d.crew.join(' ')} ${d.aircraft} ${d.location}`.toLowerCase().includes(q.toLowerCase())),[debriefs,q,type,missionType,status,peakOnly])
 
   const counts={
     post:debriefs.filter(d=>d.type==='Post-Mission').length,
     training:debriefs.filter(d=>d.type==='Training Sortie').length,
     assessment:debriefs.filter(d=>d.type==='Assessment Flight').length,
     review:debriefs.filter(d=>d.status==='Review Required').length,
+    peak:debriefs.filter(d=>d.status==='Review Required'&&d.peakSeason).length,
   }
+
+  const clear=()=>{setQ('');setType('All');setMissionType('All');setStatus('All');setPeakOnly(false)}
 
   return <>
     <PageHeader
       eyebrow="Debrief Operations"
       title="Mission, training & assessment debriefs"
-      description="Capture honest individual and team observations, keep the human-authored source intact, and move each record into the operational learning workflow."
+      description="Capture honest individual and team observations, keep the human-authored source intact, and triage high-volume review queues across SAR, EMS, Training and Firefighting operations."
       actions={<Link to="/debriefs/new" className="primary-btn"><Plus size={15}/>New debrief</Link>}
     />
 
@@ -36,7 +43,9 @@ export default function Debriefs(){
         <SearchField value={q} onChange={setQ} placeholder="Search mission, crew, aircraft or debrief…" className="min-w-[280px] flex-1"/>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
           <CustomSelect value={type} onChange={value=>setType(value as 'All'|DebriefType)} options={['All','Post-Mission','Training Sortie','Assessment Flight']} className="sm:w-[185px]"/>
+          <CustomSelect value={missionType} onChange={value=>setMissionType(value as 'All'|MissionType)} options={['All','SAR','EMS','Training','Firefighting']} className="sm:w-[165px]"/>
           <CustomSelect value={status} onChange={setStatus} options={['All','Draft','Review Required','Published']} className="sm:w-[165px]"/>
+          <button onClick={()=>setPeakOnly(v=>!v)} className={`secondary-btn h-10 ${peakOnly?'border-accent/35 bg-accent/10 text-accent':''}`}>{peakOnly?<Flame size={14}/>:<Snowflake size={14}/>}Peak season</button>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line/70 pt-3 text-[10px] text-muted">
@@ -44,17 +53,20 @@ export default function Debriefs(){
         <span><strong className="mr-1 text-info">{counts.post}</strong> post-mission</span>
         <span><strong className="mr-1 text-accent">{counts.training}</strong> training</span>
         <span><strong className="mr-1 text-purple">{counts.assessment}</strong> assessment</span>
-        <span className="ml-auto"><strong className="mr-1 text-accent">{counts.review}</strong> need review</span>
+        <span className="ml-auto"><strong className="mr-1 text-accent">{counts.review}</strong> need review · <strong className="mx-1 text-danger">{counts.peak}</strong> peak season</span>
       </div>
     </div>
 
     {visible.length?<div className="grid gap-3 xl:grid-cols-2">
       {visible.map(d=><Link key={d.id} to={`/debriefs/${d.id}`} className="card card-hover group relative overflow-hidden p-4">
-        <span className={`absolute inset-y-4 left-0 w-[2px] rounded-r-full ${d.type==='Post-Mission'?'bg-info':d.type==='Training Sortie'?'bg-accent':'bg-purple'}`}/>
+        <span className={`absolute inset-y-4 left-0 w-[2px] rounded-r-full ${d.missionType==='SAR'?'bg-info':d.missionType==='EMS'?'bg-success':d.missionType==='Training'?'bg-purple':'bg-accent'}`}/>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={typeTone(d.type)}>{d.type}</Badge>
+              <Badge tone={missionTone(d.missionType)}>{d.missionType}</Badge>
+              {d.peakSeason&&<Badge tone="danger"><Flame size={10}/>Peak season</Badge>}
+              {d.relatedMaintenanceNote&&<Badge tone="muted">Maintenance linked</Badge>}
               <span className="text-[9px] font-semibold text-faint">{d.id}</span>
             </div>
             <h2 className="mt-3 truncate text-[15px] font-semibold tracking-[-.02em] text-ink transition group-hover:text-accent">{d.title}</h2>
@@ -70,15 +82,13 @@ export default function Debriefs(){
           <div className="panel-soft p-2.5"><div className="flex items-center gap-1.5 text-[9px] text-faint"><CalendarDays size={10}/>Date</div><div className="mt-1 text-[10px] font-semibold text-ink">{d.date}</div></div>
         </div>
 
-        <div className="mt-4 rounded-xl bg-panel/45 p-3.5">
-          <div className="line-clamp-2 text-[11px] leading-5 text-muted">{d.aiSummary||d.rawNotes}</div>
-        </div>
+        <div className="mt-4 rounded-xl bg-panel/45 p-3.5"><div className="line-clamp-2 text-[11px] leading-5 text-muted">{d.aiSummary||d.rawNotes}</div></div>
 
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-line/60 pt-3">
           <div className="flex items-center gap-2 text-[9px] text-faint"><ClipboardCheck size={11}/>{d.observations.length} structured observations{d.similarDebriefIds?.length?` · ${d.similarDebriefIds.length} similar records`:''}</div>
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent">Open record <ArrowRight size={12}/></span>
         </div>
       </Link>)}
-    </div>:<EmptyState icon={<ClipboardCheck size={18}/>} title="No debriefs match these filters" description="Clear the search or adjust the custom filters to see more mission, training and assessment records." action={<button onClick={()=>{setQ('');setType('All');setStatus('All')}} className="secondary-btn">Clear filters</button>}/>} 
+    </div>:<EmptyState icon={<ClipboardCheck size={18}/>} title="No debriefs match these filters" description="Clear the search or adjust the custom filters to see more mission, training and assessment records." action={<button onClick={clear} className="secondary-btn">Clear filters</button>}/>} 
   </>
 }

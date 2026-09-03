@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, CustomSelect, FieldLabel, PageHeader, SectionCard } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
-import type { DebriefType } from '../data/types'
+import type { DebriefType, MissionType } from '../data/types'
 
 export default function NewDebrief(){
   const {createDebrief,profiles,currentActor,persona}=useDemo()
@@ -12,6 +12,7 @@ export default function NewDebrief(){
   const [linkedProfileIds,setLinkedProfileIds]=useState<string[]>(['P-101','P-102'])
   const [form,setForm]=useState({
     type:'Post-Mission' as DebriefType,
+    missionType:'SAR' as MissionType,
     title:'Coastal Support Mission Debrief',
     mission:'OPS-902',
     date:'2026-08-29',
@@ -62,6 +63,12 @@ export default function NewDebrief(){
               {value:'Post-Mission',label:'Post-Mission',description:'Operational crew debrief'},
               {value:'Training Sortie',label:'Training Sortie',description:'Trainer-linked learning record'},
               {value:'Assessment Flight',label:'Assessment Flight',description:'Checker-linked assessment evidence'},
+            ]}/></FieldLabel>
+            <FieldLabel label="Mission type"><CustomSelect value={form.missionType} onChange={value=>setForm({...form,missionType:value as MissionType})} options={[
+              {value:'SAR',label:'SAR',description:'Search & rescue operations'},
+              {value:'EMS',label:'EMS',description:'Medical and patient support missions'},
+              {value:'Training',label:'Training',description:'Training / assessment activity'},
+              {value:'Firefighting',label:'Firefighting',description:'Aerial firefighting support'},
             ]}/></FieldLabel>
             <FieldLabel label="Date"><input className="field" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></FieldLabel>
             <FieldLabel label="Title"><input className="field" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></FieldLabel>
@@ -130,7 +137,7 @@ export default function NewDebrief(){
 
         <div className="card p-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-ink"><ClipboardList size={14} className="text-purple"/>Submission preview</div>
-          <div className="mt-3 space-y-2 text-[10px]"><div className="flex justify-between gap-3"><span className="text-faint">Type</span><span className="font-semibold text-ink">{form.type}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission</span><span className="font-semibold text-ink">{form.mission}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Crew linked</span><span className="font-semibold text-ink">{linkedProfileIds.length}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Aircraft</span><span className="font-semibold text-ink">{form.aircraft}</span></div></div>
+          <div className="mt-3 space-y-2 text-[10px]"><div className="flex justify-between gap-3"><span className="text-faint">Type</span><span className="font-semibold text-ink">{form.type}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission type</span><span className="font-semibold text-ink">{form.missionType}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission</span><span className="font-semibold text-ink">{form.mission}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Crew linked</span><span className="font-semibold text-ink">{linkedProfileIds.length}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Aircraft</span><span className="font-semibold text-ink">{form.aircraft}</span></div></div>
         </div>
       </div>
     </div>

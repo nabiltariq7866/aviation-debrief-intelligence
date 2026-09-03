@@ -8,6 +8,7 @@ import Lessons from './pages/Lessons'
 import LessonDetail from './pages/LessonDetail'
 import Trends from './pages/Trends'
 import Knowledge from './pages/Knowledge'
+import CrewBrief from './pages/CrewBrief'
 import TrainingProfiles from './pages/TrainingProfiles'
 import ProfileDetail from './pages/ProfileDetail'
 import Review from './pages/Review'
@@ -29,6 +30,7 @@ const router=createBrowserRouter([
       {path:'lessons/:id',element:<LessonDetail/>},
       {path:'trends',element:<Trends/>},
       {path:'knowledge',element:<Knowledge/>},
+      {path:'crew-brief',element:<CrewBrief/>},
       {path:'training-profiles',element:<TrainingProfiles/>},
       {path:'training-profiles/:id',element:<ProfileDetail/>},
       {path:'review',element:<Review/>},

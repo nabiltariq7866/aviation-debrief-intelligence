@@ -2,6 +2,7 @@ import {
   Activity,
   BarChart3,
   BookOpen,
+  BookOpenCheck,
   BrainCircuit,
   ClipboardList,
   GraduationCap,
@@ -33,6 +34,7 @@ const nav=[
     {label:'Lessons Learned',to:'/lessons',icon:BrainCircuit},
     {label:'Trend Intelligence',to:'/trends',icon:BarChart3},
     {label:'Knowledge Base',to:'/knowledge',icon:BookOpen},
+    {label:'Crew Brief',to:'/crew-brief',icon:BookOpenCheck},
   ]},
   {label:'Development & Review',items:[
     {label:'Training Profiles',to:'/training-profiles',icon:GraduationCap},

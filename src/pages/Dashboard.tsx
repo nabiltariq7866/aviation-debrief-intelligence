@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpen,
   BrainCircuit,
@@ -40,6 +41,9 @@ export default function Dashboard(){
   const pending=lessons.filter(l=>l.status==='Draft').length
   const published=lessons.filter(l=>l.status==='Published').length
   const recentTrend=trends[0]
+  const backlog=debriefs.filter(d=>d.status==='Review Required')
+  const peakBacklog=backlog.filter(d=>d.peakSeason).length
+  const backlogRate=debriefs.length?Math.round(backlog.length/debriefs.length*100):0
 
   return <>
     <PageHeader
@@ -54,6 +58,25 @@ export default function Dashboard(){
       <MetricCard label="Published lessons" value={String(published)} caption="Searchable organization-wide" icon={<BrainCircuit size={16}/>} tone="success" change="Validated"/>
       <MetricCard label="Recurring trends" value={String(trends.length)} caption="Evidence-backed pattern signals" icon={<TrendingUp size={16}/>} tone="accent" change="+21%"/>
       <MetricCard label="Human review" value={String(pending)} caption="AI candidates awaiting validation" icon={<ShieldCheck size={16}/>} tone="purple"/>
+    </div>
+
+    <div className="mt-4 overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-r from-accent/10 via-surface to-purple/5">
+      <div className="grid gap-0 xl:grid-cols-[1.1fr_.9fr]">
+        <div className="p-5">
+          <div className="flex items-start gap-4">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/25 bg-accent/10 text-accent"><AlertTriangle size={18}/></div>
+            <div className="min-w-0 flex-1">
+              <div className="label text-accent">Review backlog</div>
+              <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1"><span className="text-[34px] font-semibold tracking-[-.05em] text-ink">{backlog.length}</span><span className="mb-1 text-sm font-semibold text-ink">debriefs awaiting review</span></div>
+              <p className="mt-2 max-w-2xl text-[11px] leading-5 text-muted">The workspace now demonstrates triage at operational volume, not just archive search. Peak-season records are visibly separated so reviewers can prioritize the highest-pressure period.</p>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 border-t border-line/70 xl:border-l xl:border-t-0">
+          <div className="p-5"><div className="data-label">Peak-season backlog</div><div className="mt-2 text-2xl font-semibold text-accent">{peakBacklog}</div><div className="mt-1 text-[10px] text-muted">flagged for priority review</div></div>
+          <div className="border-l border-line/70 p-5"><div className="data-label">Queue share</div><div className="mt-2 text-2xl font-semibold text-ink">{backlogRate}%</div><Link to="/debriefs?status=Review%20Required" className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-accent">Open triage queue <ArrowRight size={12}/></Link></div>
+        </div>
+      </div>
     </div>
 
     <div className="mt-4 grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
