@@ -1,8 +1,8 @@
 import { ArrowRight, Search, TrendingDown, TrendingUp, Minus, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Badge, Modal, PageHeader, SectionCard } from '../components/ui'
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Badge, CustomSelect, Modal, PageHeader, SectionCard } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
 import type { Trend } from '../data/types'
 
@@ -11,8 +11,15 @@ const tooltipStyle={background:'var(--bg-elevated)',border:'1px solid var(--bord
 export default function Trends(){
   const {trends,debriefs}=useDemo()
   const [selected,setSelected]=useState<Trend|null>(null)
+  const [comparisonTrendId,setComparisonTrendId]=useState(trends[0]?.id||'')
+  const [compareBy,setCompareBy]=useState<'Time of Day'|'Aircraft Type'>('Time of Day')
   const totalSignals=trends.reduce((sum,t)=>sum+t.occurrences,0)
   const totalEvidence=trends.reduce((sum,t)=>sum+t.sourceDebriefIds.length,0)
+  const comparisonTrend=trends.find(t=>t.id===comparisonTrendId)||trends[0]
+  const comparisonEvidence=(comparisonTrend?.sourceDebriefIds||[]).map(id=>debriefs.find(d=>d.id===id)).filter(Boolean)
+  const comparisonData=compareBy==='Time of Day'
+    ?(['Day','Night'] as const).map(label=>({label,count:comparisonEvidence.filter(d=>(d?.operationPeriod||'Day')===label).length}))
+    :Array.from(new Set(comparisonEvidence.map(d=>d?.aircraft).filter(Boolean))).map(label=>({label:String(label),count:comparisonEvidence.filter(d=>d?.aircraft===label).length}))
 
   return <>
     <PageHeader
@@ -26,6 +33,30 @@ export default function Trends(){
       <div className="card p-4"><div className="data-label">Pattern signals</div><div className="mt-2 text-2xl font-semibold text-ink">{trends.length}</div><div className="mt-1 text-[10px] text-muted">Recurring themes currently surfaced</div></div>
       <div className="card p-4"><div className="data-label">Occurrences represented</div><div className="mt-2 text-2xl font-semibold text-ink">{totalSignals}</div><div className="mt-1 text-[10px] text-muted">Across historical learning records</div></div>
       <div className="card p-4"><div className="data-label">Supporting evidence</div><div className="mt-2 text-2xl font-semibold text-ink">{totalEvidence}</div><div className="mt-1 text-[10px] text-muted">Inspectable debrief source records</div></div>
+    </div>
+
+    <div className="mb-4">
+      <SectionCard title="Theme recurrence comparison" description="Compare the selected recurring theme by day vs. night or aircraft type. Monthly trend cards below continue to show recurrence over time.">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+          <CustomSelect value={comparisonTrend?.id||''} onChange={setComparisonTrendId} options={trends.map(t=>({value:t.id,label:t.title,description:`${t.occurrences} occurrences · ${t.category}`}))}/>
+          <CustomSelect value={compareBy} onChange={value=>setCompareBy(value as 'Time of Day'|'Aircraft Type')} options={[
+            {value:'Time of Day',label:'Day vs Night',description:'Compare evidence by operation period'},
+            {value:'Aircraft Type',label:'Aircraft Type',description:'Compare evidence by aircraft / platform'},
+          ]}/>
+        </div>
+        <div className="mt-4 h-[220px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={comparisonData}>
+              <CartesianGrid vertical={false}/>
+              <XAxis dataKey="label" axisLine={false} tickLine={false}/>
+              <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={22}/>
+              <Tooltip contentStyle={tooltipStyle}/>
+              <Bar dataKey="count" name="Evidence records" fill="var(--accent)" radius={[7,7,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-2 text-[9px] leading-4 text-faint">Counts are derived from the same inspectable source debriefs linked to the selected trend; AI does not change the original records.</div>
+      </SectionCard>
     </div>
 
     <div className="grid gap-4 xl:grid-cols-2">
@@ -85,7 +116,7 @@ export default function Trends(){
           const d=debriefs.find(item=>item.id===id)
           return d?<Link to={`/debriefs/${d.id}`} key={d.id} className="group flex items-start gap-3 rounded-xl border border-line bg-panel/40 p-3.5 transition hover:border-accent/30">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-line bg-surface text-accent"><Search size={14}/></div>
-            <div className="min-w-0 flex-1"><div className="text-xs font-semibold text-ink group-hover:text-accent">{d.title}</div><div className="mt-1 text-[9px] text-faint">{d.id} · {d.type} · {d.date} · {d.crew.join(', ')}</div><div className="mt-2 line-clamp-2 text-[10px] leading-4 text-muted">{d.aiSummary||d.rawNotes}</div></div>
+            <div className="min-w-0 flex-1"><div className="text-xs font-semibold text-ink group-hover:text-accent">{d.title}</div><div className="mt-1 text-[9px] text-faint">{d.id} · {d.type} · {d.operationPeriod||'Day'} · {d.aircraft} · {d.date} · {d.crew.join(', ')}</div><div className="mt-2 line-clamp-2 text-[10px] leading-4 text-muted">{d.aiSummary||d.rawNotes}</div></div>
             <ArrowRight size={13} className="mt-1 shrink-0 text-faint transition group-hover:text-accent"/>
           </Link>:<div key={id} className="rounded-xl border border-line p-3 text-xs text-muted">Historical evidence reference {id}</div>
         })}

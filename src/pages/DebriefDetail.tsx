@@ -31,7 +31,7 @@ export default function DebriefDetail(){
     <PageHeader
       eyebrow={`${d.type} · ${d.id}`}
       title={d.title}
-      description={`${d.missionType} · ${d.mission} · ${d.aircraft} · ${d.location} · ${d.date}`}
+      description={`${d.missionType} · ${d.operationPeriod||'Day'} · ${d.mission} · ${d.aircraft} · ${d.location} · ${d.date}`}
       actions={<div className="flex items-center gap-2">{d.status!=='Draft'&&<Badge tone={d.status==='Published'?'success':'accent'}>{d.status}</Badge>}{d.status==='Draft'&&<button onClick={()=>analyzeDebrief(d.id)} className="primary-btn"><Sparkles size={15}/>Run AI organization</button>}</div>}
     />
 
@@ -58,6 +58,11 @@ export default function DebriefDetail(){
           </div>
 
           <div className="mt-4 rounded-xl border border-line bg-panel/45 p-4"><div className="flex items-center gap-2 text-[10px] font-semibold text-ink"><FileText size={13} className="text-accent"/>Raw observations</div><div className="mt-2 text-[11px] leading-6 text-muted">{d.rawNotes}</div></div>
+
+          <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr]">
+            <div className="panel-soft p-3.5"><div className="data-label">Operation period</div><div className="mt-1 text-xs font-semibold text-ink">{d.operationPeriod||'Day'}</div></div>
+            <div className="panel-soft p-3.5"><div className="data-label">Contributing factors</div><div className="mt-2 flex flex-wrap gap-1.5">{(d.contributingFactors?.length?d.contributingFactors:['Not separately tagged in this historical record']).map(factor=><Badge key={factor} tone="muted">{factor}</Badge>)}</div></div>
+          </div>
 
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border border-purple/20 bg-purple/5 p-3.5"><div className="text-[10px] font-semibold text-purple">Individual self-evaluation</div><div className="mt-2 text-[10px] leading-5 text-muted">{d.selfEvaluation||'No separate self-evaluation was stored in this historical seed record.'}</div></div>

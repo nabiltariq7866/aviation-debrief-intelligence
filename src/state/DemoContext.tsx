@@ -19,6 +19,7 @@ import type {
   DemoSettings,
   Lesson,
   MissionType,
+  OperationPeriod,
   Persona,
   TrainingProfile,
   Trend,
@@ -27,6 +28,7 @@ import type {
 type NewDebriefInput={
   type:DebriefType
   missionType:MissionType
+  operationPeriod:OperationPeriod
   title:string
   mission:string
   date:string
@@ -36,6 +38,7 @@ type NewDebriefInput={
   rawNotes:string
   whatWentWell:string
   improve:string
+  contributingFactors:string[]
   selfEvaluation:string
   teamEvaluation:string
   trainerCheckerNotes:string
@@ -181,7 +184,7 @@ export function DemoProvider({children}:{children:ReactNode}){
     const target=debriefs.find(d=>d.id===id)
     if(!target)return
 
-    const combined=`${target.rawNotes} ${target.improve} ${target.selfEvaluation||''} ${target.teamEvaluation||''} ${target.trainerCheckerNotes||''}`.toLowerCase()
+    const combined=`${target.rawNotes} ${target.improve} ${(target.contributingFactors||[]).join(' ')} ${target.selfEvaluation||''} ${target.teamEvaluation||''} ${target.trainerCheckerNotes||''}`.toLowerCase()
     const category=combined.includes('weather')||combined.includes('wind')
       ?'Weather Awareness'
       :combined.includes('handover')||combined.includes('communication')||combined.includes('crm')
@@ -215,6 +218,7 @@ export function DemoProvider({children}:{children:ReactNode}){
       ...(target.selfEvaluation?[{id:`OBS-${Date.now()}-self`,category,text:target.selfEvaluation,sentiment:'Neutral' as const,trainingRelevant:target.type!=='Post-Mission',source:'Self Evaluation' as const}]:[]),
       ...(target.teamEvaluation?[{id:`OBS-${Date.now()}-team`,category,text:target.teamEvaluation,sentiment:'Neutral' as const,trainingRelevant:true,source:'Team Evaluation' as const}]:[]),
       ...(target.trainerCheckerNotes?[{id:`OBS-${Date.now()}-trainer`,category,text:target.trainerCheckerNotes,sentiment:'Improvement' as const,trainingRelevant:true,source:'Trainer / Checker' as const}]:[]),
+      ...((target.contributingFactors||[]).length?[{id:`OBS-${Date.now()}-factors`,category:'Contributing Factors',text:`Contributing factors: ${(target.contributingFactors||[]).join(', ')}.`,sentiment:'Neutral' as const,trainingRelevant:true,source:'General Debrief' as const}]:[]),
       {id:`OBS-${Date.now()}-positive`,category,text:target.whatWentWell||'Positive operational performance was identified.',sentiment:'Positive' as const,trainingRelevant:true,source:'General Debrief' as const},
       {id:`OBS-${Date.now()}-improve`,category,text:target.improve||target.rawNotes,sentiment:'Improvement' as const,trainingRelevant:true,source:'General Debrief' as const},
     ]

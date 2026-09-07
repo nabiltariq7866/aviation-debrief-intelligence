@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, CustomSelect, FieldLabel, PageHeader, SectionCard } from '../components/ui'
 import { useDemo } from '../state/DemoContext'
-import type { DebriefType, MissionType } from '../data/types'
+import type { DebriefType, MissionType, OperationPeriod } from '../data/types'
 
 export default function NewDebrief(){
   const {createDebrief,profiles,currentActor,persona}=useDemo()
@@ -13,6 +13,7 @@ export default function NewDebrief(){
   const [form,setForm]=useState({
     type:'Post-Mission' as DebriefType,
     missionType:'SAR' as MissionType,
+    operationPeriod:'Day' as OperationPeriod,
     title:'Coastal Support Mission Debrief',
     mission:'OPS-902',
     date:'2026-08-29',
@@ -24,6 +25,7 @@ export default function NewDebrief(){
     trainerCheckerNotes:'',
     whatWentWell:'Clear task sharing and calm communication under changing conditions.',
     improve:'Refresh the threat and weather briefing earlier when conditions change before descent.',
+    contributingFactors:['Weather','Crew workload'],
     createdBy:currentActor,
   })
 
@@ -31,6 +33,13 @@ export default function NewDebrief(){
   const selectedCrew=profiles.filter(p=>linkedProfileIds.includes(p.id)).map(p=>p.name)
   const needsTrainingProfile=form.type!=='Post-Mission'
   const aircraftOptions=['AW139','H175','H145','S-92','Bell 412']
+  const factorOptions=['Weather','Visibility','Crew workload','Communication','Equipment','Terrain','Time pressure']
+  const toggleFactor=(factor:string)=>setForm(current=>({
+    ...current,
+    contributingFactors:current.contributingFactors.includes(factor)
+      ?current.contributingFactors.filter(item=>item!==factor)
+      :[...current.contributingFactors,factor],
+  }))
 
   const submit=()=>{
     if(!form.title.trim()||!form.rawNotes.trim()||(needsTrainingProfile&&!linkedProfileIds.length))return
@@ -69,6 +78,10 @@ export default function NewDebrief(){
               {value:'EMS',label:'EMS',description:'Medical and patient support missions'},
               {value:'Training',label:'Training',description:'Training / assessment activity'},
               {value:'Firefighting',label:'Firefighting',description:'Aerial firefighting support'},
+            ]}/></FieldLabel>
+            <FieldLabel label="Operation period"><CustomSelect value={form.operationPeriod} onChange={value=>setForm({...form,operationPeriod:value as OperationPeriod})} options={[
+              {value:'Day',label:'Day',description:'Daylight operation / sortie'},
+              {value:'Night',label:'Night',description:'Night or low-light operation / sortie'},
             ]}/></FieldLabel>
             <FieldLabel label="Date"><input className="field" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></FieldLabel>
             <FieldLabel label="Title"><input className="field" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></FieldLabel>
@@ -111,6 +124,16 @@ export default function NewDebrief(){
               <FieldLabel label="What went well"><textarea className="textarea-field min-h-[100px]" value={form.whatWentWell} onChange={e=>setForm({...form,whatWentWell:e.target.value})}/></FieldLabel>
               <FieldLabel label="What could improve"><textarea className="textarea-field min-h-[100px]" value={form.improve} onChange={e=>setForm({...form,improve:e.target.value})}/></FieldLabel>
             </div>
+            <div>
+              <div className="mb-2 text-xs font-semibold text-ink">Contributing factors</div>
+              <div className="flex flex-wrap gap-2">
+                {factorOptions.map(factor=>{
+                  const active=form.contributingFactors.includes(factor)
+                  return <button key={factor} type="button" onClick={()=>toggleFactor(factor)} className={`rounded-lg border px-3 py-2 text-[10px] font-semibold transition ${active?'border-accent/35 bg-accent/10 text-accent':'border-line bg-panel/35 text-muted hover:border-accent/25 hover:text-ink'}`}>{factor}</button>
+                })}
+              </div>
+              <div className="mt-2 text-[9px] leading-4 text-faint">Structured context used for later organization and trend comparison; it does not alter the human-authored debrief.</div>
+            </div>
           </div>
           <div className="mt-5 flex items-center justify-between gap-3 border-t border-line/70 pt-4"><div className="text-[10px] text-muted">Next step: preserve the record, then open it and run AI organization.</div><button disabled={saving||!form.title.trim()||!form.rawNotes.trim()||(needsTrainingProfile&&!linkedProfileIds.length)} onClick={submit} className="primary-btn">{saving?'Creating & linking record…':<>Create debrief <ArrowRight size={15}/></>}</button></div>
         </SectionCard>
@@ -137,7 +160,7 @@ export default function NewDebrief(){
 
         <div className="card p-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-ink"><ClipboardList size={14} className="text-purple"/>Submission preview</div>
-          <div className="mt-3 space-y-2 text-[10px]"><div className="flex justify-between gap-3"><span className="text-faint">Type</span><span className="font-semibold text-ink">{form.type}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission type</span><span className="font-semibold text-ink">{form.missionType}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission</span><span className="font-semibold text-ink">{form.mission}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Crew linked</span><span className="font-semibold text-ink">{linkedProfileIds.length}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Aircraft</span><span className="font-semibold text-ink">{form.aircraft}</span></div></div>
+          <div className="mt-3 space-y-2 text-[10px]"><div className="flex justify-between gap-3"><span className="text-faint">Type</span><span className="font-semibold text-ink">{form.type}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission type</span><span className="font-semibold text-ink">{form.missionType}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Operation period</span><span className="font-semibold text-ink">{form.operationPeriod}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Mission</span><span className="font-semibold text-ink">{form.mission}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Crew linked</span><span className="font-semibold text-ink">{linkedProfileIds.length}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Aircraft</span><span className="font-semibold text-ink">{form.aircraft}</span></div><div className="flex justify-between gap-3"><span className="text-faint">Contributing factors</span><span className="font-semibold text-ink">{form.contributingFactors.length}</span></div></div>
         </div>
       </div>
     </div>

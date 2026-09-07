@@ -44,6 +44,7 @@ export default function Extensions(){
     const id=createDebrief({
       type:'Post-Mission',
       missionType:'SAR',
+      operationPeriod:'Day',
       title:audio.title,
       mission:audio.mission,
       date:'2026-08-29',
@@ -56,6 +57,7 @@ export default function Extensions(){
       trainerCheckerNotes:'',
       whatWentWell:'Crew communication remained effective during the changing conditions.',
       improve:'Refresh weather and threat briefing earlier when conditions materially change.',
+      contributingFactors:['Weather','Crew workload'],
       createdBy:currentActor,
       linkedProfileIds:profile?[profile.id]:[],
     })

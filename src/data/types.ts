@@ -1,6 +1,7 @@
 export type DebriefType='Post-Mission'|'Training Sortie'|'Assessment Flight'
 export type DebriefStatus='Draft'|'AI Structured'|'Review Required'|'Published'
 export type MissionType='SAR'|'EMS'|'Training'|'Firefighting'
+export type OperationPeriod='Day'|'Night'
 export type LessonStatus='Draft'|'Published'
 export type CorrectiveActionStatus='Open'|'In Progress'|'Closed'
 export type Persona='Crew Member'|'Trainer'|'Checker'
@@ -29,6 +30,7 @@ export interface Debrief{
   id:string
   type:DebriefType
   missionType:MissionType
+  operationPeriod?:OperationPeriod
   title:string
   mission:string
   date:string
@@ -38,6 +40,7 @@ export interface Debrief{
   rawNotes:string
   whatWentWell:string
   improve:string
+  contributingFactors?:string[]
   selfEvaluation?:string
   teamEvaluation?:string
   trainerCheckerNotes?:string
